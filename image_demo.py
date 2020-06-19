@@ -22,7 +22,8 @@ for i, fm in enumerate(feature_maps):
     bbox_tensor = decode(fm, i)    # decode into [x,y,w,h,c] corresponding to 416*416
     bbox_tensors.append(bbox_tensor)    # bbox_tensors [[b,52,52,3,5+c], [b,26,26,3,5+c], [b,13,13,3,5+c]]
 model = tf.keras.Model(input_layer, bbox_tensors)    # generate a model object based on input layer and output layer
-utils.load_weights(model, "./yolov3.weights")
+model.load_weights('./YOLOv3_origin_loss21.h5')
+# utils.load_weights(model, "./yolov3.weights")
 model.summary()    # print model information
 
 

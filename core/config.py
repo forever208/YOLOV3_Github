@@ -29,7 +29,7 @@ __C.TRAIN.EPOCHS              = 1
 # TEST options
 __C.TEST                      = edict()    #cfg = {YOLO:{}, TRAIN:{}, TEST:{}}
 __C.TEST.ANNOT_PATH           = "./data/labels/val_labels.txt"
-__C.TEST.BATCH_SIZE           = 1
+__C.TEST.BATCH_SIZE           = 16
 __C.TEST.INPUT_SIZE           = [416]
 __C.TEST.DATA_AUG             = False
 __C.TEST.DECTECTED_IMAGE_PATH = "C:/PycharmProjects/YOLOV3_Github/data/detection/"

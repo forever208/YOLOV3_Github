@@ -36,63 +36,63 @@ utils.load_weights(model, "./yolov3.weights")    # load weights
 model.summary()
 
 
-"""set up optimizer, tensorboard"""
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
-if os.path.exists(logdir): shutil.rmtree(logdir)    # remove logdir folder and its files recursively
-writer = tf.summary.create_file_writer(logdir)    # creat a summary file which can be visualised by TensorBoard
-
-
-"""compute loss, apply gradients"""
-for epoch in range(cfg.TRAIN.EPOCHS):    # for every epoch
-    for image_data, target in trainset:    # for every batch
-        with tf.GradientTape() as tape:
-            pred_result = model(image_data, training=True)
-            giou_loss = 0
-            conf_loss = 0
-            prob_loss = 0
-
-            # sum up loss over 3 scales
-            for i in range(3):
-                conv, pred = pred_result[i * 2], pred_result[i * 2 + 1]    # get output and decoded ouput(pred) simultanuously
-                loss_items = compute_loss(pred, conv, *target[i], i)    # compare decoded output and label for loss computation
-                giou_loss += loss_items[0]
-                conf_loss += loss_items[1]
-                prob_loss += loss_items[2]
-            total_loss = giou_loss + conf_loss + prob_loss  # compute loss
-
-            # compute gradient
-            gradients = tape.gradient(total_loss, model.trainable_variables)
-
-            # apply gradients to update weights
-            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-
-            # print loss
-            tf.print("=> STEP %4d   lr: %.6f   giou_loss: %4.2f   conf_loss: %4.2f   "
-                     "prob_loss: %4.2f   total_loss: %4.2f" % (global_steps, optimizer.lr.numpy(),
-                                                               giou_loss, conf_loss, prob_loss, total_loss))
-            global_steps.assign_add(1)
-
-            # """alternatively, you could manually set up lr decay schedule"""
-            # if global_steps < warmup_steps:
-            #     lr = global_steps / warmup_steps *cfg.TRAIN.LR_INIT
-            # else:
-            #     lr = cfg.TRAIN.LR_END + 0.5 * (cfg.TRAIN.LR_INIT - cfg.TRAIN.LR_END) * (
-            #         (1 + tf.cos((global_steps - warmup_steps) / (total_steps - warmup_steps) * np.pi)))
-            #
-            # # update learning rate
-            # optimizer.lr.assign(lr.numpy())
-
-            # write loss into the summary
-            with writer.as_default():
-                tf.summary.scalar("lr", optimizer.lr, step=global_steps)
-                tf.summary.scalar("loss/total_loss", total_loss, step=global_steps)
-                tf.summary.scalar("loss/giou_loss", giou_loss, step=global_steps)
-                tf.summary.scalar("loss/conf_loss", conf_loss, step=global_steps)
-                tf.summary.scalar("loss/prob_loss", prob_loss, step=global_steps)
-            writer.flush()
-
-    tf.print('epoch:%d' %epoch)
-    model.save_weights("C:/PycharmProjects/YOLOV3_Github/model.h5")    # only save weights after each epoch
+# """set up optimizer, tensorboard"""
+# optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
+# if os.path.exists(logdir): shutil.rmtree(logdir)    # remove logdir folder and its files recursively
+# writer = tf.summary.create_file_writer(logdir)    # creat a summary file which can be visualised by TensorBoard
+#
+#
+# """compute loss, apply gradients"""
+# for epoch in range(cfg.TRAIN.EPOCHS):    # for every epoch
+#     for image_data, target in trainset:    # for every batch
+#         with tf.GradientTape() as tape:
+#             pred_result = model(image_data, training=True)
+#             giou_loss = 0
+#             conf_loss = 0
+#             prob_loss = 0
+#
+#             # sum up loss over 3 scales
+#             for i in range(3):
+#                 conv, pred = pred_result[i * 2], pred_result[i * 2 + 1]    # get output and decoded ouput(pred) simultanuously
+#                 loss_items = compute_loss(pred, conv, *target[i], i)    # compare decoded output and label for loss computation
+#                 giou_loss += loss_items[0]
+#                 conf_loss += loss_items[1]
+#                 prob_loss += loss_items[2]
+#             total_loss = giou_loss + conf_loss + prob_loss  # compute loss
+#
+#             # compute gradient
+#             gradients = tape.gradient(total_loss, model.trainable_variables)
+#
+#             # apply gradients to update weights
+#             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+#
+#             # print loss
+#             tf.print("=> STEP %4d   lr: %.6f   giou_loss: %4.2f   conf_loss: %4.2f   "
+#                      "prob_loss: %4.2f   total_loss: %4.2f" % (global_steps, optimizer.lr.numpy(),
+#                                                                giou_loss, conf_loss, prob_loss, total_loss))
+#             global_steps.assign_add(1)
+#
+#             # """alternatively, you could manually set up lr decay schedule"""
+#             # if global_steps < warmup_steps:
+#             #     lr = global_steps / warmup_steps *cfg.TRAIN.LR_INIT
+#             # else:
+#             #     lr = cfg.TRAIN.LR_END + 0.5 * (cfg.TRAIN.LR_INIT - cfg.TRAIN.LR_END) * (
+#             #         (1 + tf.cos((global_steps - warmup_steps) / (total_steps - warmup_steps) * np.pi)))
+#             #
+#             # # update learning rate
+#             # optimizer.lr.assign(lr.numpy())
+#
+#             # write loss into the summary
+#             with writer.as_default():
+#                 tf.summary.scalar("lr", optimizer.lr, step=global_steps)
+#                 tf.summary.scalar("loss/total_loss", total_loss, step=global_steps)
+#                 tf.summary.scalar("loss/giou_loss", giou_loss, step=global_steps)
+#                 tf.summary.scalar("loss/conf_loss", conf_loss, step=global_steps)
+#                 tf.summary.scalar("loss/prob_loss", prob_loss, step=global_steps)
+#             writer.flush()
+#
+#     tf.print('epoch:%d' %epoch)
+#     model.save_weights("./model.h5")    # only save weights after each epoch
 
 
 
