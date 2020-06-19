@@ -11,7 +11,7 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"    # use CPU
 
 input_size   = 416
-image_path   = "./demo/kite.jpg"
+image_path   = "./demo/000000009590.jpg"
 
 
 """build model and load weights"""

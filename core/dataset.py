@@ -1,3 +1,4 @@
+
 import os
 import cv2
 import random
@@ -69,7 +70,7 @@ class Dataset(object):
             batch_lbboxes = np.zeros((self.batch_size, self.max_bbox_per_scale, 4), dtype=np.float32)    # (b,150,4)
 
             num = 0
-            """for every batch, for every image, get image data and labels"""
+            """for every batch, for every image, get image data and gt labels"""
             if self.batch_count < self.num_batchs:
                 while num < self.batch_size:
                     index = self.batch_count * self.batch_size + num
@@ -80,7 +81,7 @@ class Dataset(object):
                     # parse one annotation to get a resized image and bboxes
                     image, bboxes = self.parse_annotation(annotation)    # bboxes: 2D [[xmin, ymin, xmax, ymax, class_id], [xmin, ymin, xmax, ymax, class_id]...]
 
-                    """for every gt bbox, match it with one anchor, generate 4D label tensors (52,52,3,5+c), (26,26,3,5+c), (13,13,3,5+c) respectively, coordinates are relating to 416"""
+                    """for every gt bbox, match it with anchors, generate 4D label tensors (52,52,3,5+c), (26,26,3,5+c), (13,13,3,5+c) respectively, coordinates are relating to 416"""
                     label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes = self.preprocess_true_boxes(bboxes)
 
                     batch_image[num, :, :, :] = image
@@ -161,10 +162,10 @@ class Dataset(object):
         """
         read an image, resize it to 416*416, resize bboxes as well
         :param annotation: 'C:/PycharmProjects/YOLOV3 Github/yymnist/Images/000002.jpg xmin, ymin, xmax, ymax, class_id xmin, ymin, xmax, ymax, class_ind'
-        :return: bboxes: 2D tensor [[xmin, ymin, xmax, ymax, class_id], [xmin, ymin, xmax, ymax, class_id]...]
+        :return: bboxes: 2D tensor [[xmin, ymin, xmax, ymax, class_id], [xmin, ymin, xmax, ymax, class_id]...], relating to 416
         """
         line = annotation.split()
-        image_path = line[0]    # 'C:/PycharmProjects/YOLOV3_Github/yymnist/Images/000002.jpg'
+        image_path = line[0]    # './yymnist/Images/000002.jpg'
         if not os.path.exists(image_path):
             raise KeyError("%s does not exist ... " %image_path)
         image = cv2.imread(image_path)    # read an image
@@ -203,10 +204,10 @@ class Dataset(object):
         return inter_area / union_area
 
 
-    """given an image, match every gt bbox with one anchor, generate gt label with 5D tensor ((52,52,3,5+c), (26,26,3,5+c), (13,13,3,5+c))"""
+    """given an image, match every gt bbox with anchors, generate gt label with 5D tensor ((52,52,3,5+c), (26,26,3,5+c), (13,13,3,5+c))"""
     def preprocess_true_boxes(self, bboxes):
         """
-        :param bboxes: ground truth bboxes that contain n objects, [[xmin, ymin, xmax, ymax, class_id], [xmin, ymin, xmax, ymax, class_id]...]
+        :param bboxes: ground truth bboxes that contain n objects, [[xmin, ymin, xmax, ymax, class_id], [xmin, ymin, xmax, ymax, class_id]...], xy are relating to 416 size
         :return: label_sbbox: gt label in 52 scale, 4D tensor (52,52,3,5+c), xywh are relating to 416 size
                  label_mbbox: gt label in 26 scale, 4D tensor (52,52,3,5+c), xywh are relating to 416 size
                  label_lbbox: gt label in 13 scale, 4D tensor (52,52,3,5+c), xywh are relating to 416 size
@@ -217,10 +218,10 @@ class Dataset(object):
 
         # initialise gt label: 5D (52,52,3,5+c), (26,26,3,5+c), (13,13,3,5+c)
         label = [np.zeros((self.train_output_sizes[i], self.train_output_sizes[i], self.anchor_per_scale, 5+self.num_classes)) for i in range(3)]
-        bboxes_xywh = [np.zeros((self.max_bbox_per_scale, 4)) for _ in range(3)]    # 3D (150,4), (150,4), (150,4)
+        bboxes_xywh = [np.zeros((self.max_bbox_per_scale, 4)) for _ in range(3)]    # 3D with shape (150,4), (150,4), (150,4)
         bbox_count = np.zeros((3,))
 
-        """for every gt bbox, match it with an anchor, assign gt's [x,y,w,h] in the position of the anchor"""
+        """for every gt bbox, match it with anchors, assign gt's [x,y,w,h] in the position of these anchors"""
         for bbox in bboxes:    # for every bbox [xmin, ymin, xmax, ymax, class_id]
             bbox_coor = bbox[:4]    # [xmin, ymin, xmax, ymax]
             bbox_class_ind = bbox[4]    # [class_id]
@@ -234,27 +235,27 @@ class Dataset(object):
             # [xmin, ymin, xmax, ymax]  --> [x, y, w, h]
             bbox_xywh = np.concatenate([(bbox_coor[2:]+bbox_coor[:2])*0.5, bbox_coor[2:]-bbox_coor[:2]], axis=-1)
 
-            # [x, y, w, h] --> [[x/8, y/8, w/8, h/8], [x/16, y/16, w/16, h/16], [x/32, y/32, w/32, h/32]
+            # one gt bbox [x, y, w, h] --> 3 gt bboxes [[x/8, y/8, w/8, h/8], [x/16, y/16, w/16, h/16], [x/32, y/32, w/32, h/32]
             bbox_xywh_scaled = 1.0 * bbox_xywh[np.newaxis, :] / self.strides[:, np.newaxis]    # 2D with shape (3,4)
 
             iou = []
             exist_positive = False
             for i in range(3):    # for every scale
-                anchors_xywh = np.zeros((self.anchor_per_scale, 4))    # shape (3,4)
-                anchors_xywh[:, 0:2] = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32) + 0.5    # set anchor's xy in the current grid center
+                anchors_xywh = np.zeros((self.anchor_per_scale, 4))    # initialise anchors as shape (3,4)
+                anchors_xywh[:, 0:2] = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32) + 0.5    # set anchor's xy as the current top left grid
                 anchors_xywh[:, 2:4] = self.anchors[i]    # get anchor's wh
 
-                iou_scale = self.bbox_iou(bbox_xywh_scaled[i][np.newaxis, :], anchors_xywh)    # compute iou between gt and 3 anchors
+                iou_scale = self.bbox_iou(bbox_xywh_scaled[i][np.newaxis, :], anchors_xywh)    # compute IOU between gt bbox and 3 anchors
                 iou.append(iou_scale)
-                iou_mask = iou_scale > 0.3
+                iou_mask = iou_scale > 0.3    # as long as the IOU>3, the anchor will be regarded as positive (i.e. containing object)
 
                 if np.any(iou_mask):    # if the gt bbox matches with 1 anchor, locate the box in the position of the anchor
-                    xind, yind = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32)
+                    xind, yind = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32)    # get the [x,y] coordiante of the grid that contains the gt bbox
 
                     label[i][yind, xind, iou_mask, :] = 0
-                    label[i][yind, xind, iou_mask, 0:4] = bbox_xywh
-                    label[i][yind, xind, iou_mask, 4:5] = 1.0
-                    label[i][yind, xind, iou_mask, 5:] = smooth_onehot
+                    label[i][yind, xind, iou_mask, 0:4] = bbox_xywh    # set xywh for gt label in the grid
+                    label[i][yind, xind, iou_mask, 4:5] = 1.0    # set confidence as 1 for gt label in the grid
+                    label[i][yind, xind, iou_mask, 5:] = smooth_onehot    # set smoothed class for gt label in the grid
 
                     bbox_ind = int(bbox_count[i] % self.max_bbox_per_scale)
                     bboxes_xywh[i][bbox_ind, :4] = bbox_xywh

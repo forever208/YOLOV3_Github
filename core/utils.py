@@ -74,7 +74,6 @@ def image_preporcess(image, target_size, gt_boxes=None):
     :param gt_boxes:
     :return: processed image [h, w, c]
     """
-
     ih, iw    = target_size
     h,  w, _  = image.shape
 

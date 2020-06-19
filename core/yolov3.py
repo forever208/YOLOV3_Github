@@ -25,8 +25,8 @@ def YOLOv3(input_layer):
     conv = common.convolutional(conv, (1, 1, 1024,  512), conv_trainable=False)
     conv = common.convolutional(conv, (3, 3,  512, 1024), conv_trainable=False)
     conv = common.convolutional(conv, (1, 1, 1024,  512), conv_trainable=False)
-    conv = common.convolutional(conv, (3, 3,  512, 1024), conv_trainable=False)
-    conv = common.convolutional(conv, (1, 1, 1024,  512), conv_trainable=False)
+    conv = common.convolutional(conv, (3, 3,  512, 1024))
+    conv = common.convolutional(conv, (1, 1, 1024,  512))
     conv_lobj_branch = common.convolutional(conv, (3, 3, 512, 1024))
     conv_lbbox = common.convolutional(conv_lobj_branch, (1, 1, 1024, 3*(NUM_CLASS+5)), activate=False, bn=False)
 
@@ -39,8 +39,8 @@ def YOLOv3(input_layer):
     conv = common.convolutional(conv, (1, 1, 768, 256), conv_trainable=False)
     conv = common.convolutional(conv, (3, 3, 256, 512), conv_trainable=False)
     conv = common.convolutional(conv, (1, 1, 512, 256), conv_trainable=False)
-    conv = common.convolutional(conv, (3, 3, 256, 512), conv_trainable=False)
-    conv = common.convolutional(conv, (1, 1, 512, 256), conv_trainable=False)
+    conv = common.convolutional(conv, (3, 3, 256, 512))
+    conv = common.convolutional(conv, (1, 1, 512, 256))
     conv_mobj_branch = common.convolutional(conv, (3, 3, 256, 512))
     conv_mbbox = common.convolutional(conv_mobj_branch, (1, 1, 512, 3*(NUM_CLASS+5)), activate=False, bn=False)
 
@@ -53,8 +53,8 @@ def YOLOv3(input_layer):
     conv = common.convolutional(conv, (1, 1, 384, 128), conv_trainable=False)
     conv = common.convolutional(conv, (3, 3, 128, 256), conv_trainable=False)
     conv = common.convolutional(conv, (1, 1, 256, 128), conv_trainable=False)
-    conv = common.convolutional(conv, (3, 3, 128, 256), conv_trainable=False)
-    conv = common.convolutional(conv, (1, 1, 256, 128), conv_trainable=False)
+    conv = common.convolutional(conv, (3, 3, 128, 256))
+    conv = common.convolutional(conv, (1, 1, 256, 128))
     conv_sobj_branch = common.convolutional(conv, (3, 3, 128, 256))
     conv_sbbox = common.convolutional(conv_sobj_branch, (1, 1, 256, 3*(NUM_CLASS+5)), activate=False, bn=False)
 
@@ -206,7 +206,7 @@ def compute_loss(pred, conv, label, bboxes, i=0):
     iou = bbox_iou(pred_xywh[:, :, :, :, np.newaxis, :], bboxes[:, np.newaxis, np.newaxis, np.newaxis, :, :])
 
     # get the predicted bbox that has the highest IOU with ground truth
-    max_iou = tf.expand_dims(tf.reduce_max(iou, axis=-1), axis=-1)    # [batch, 13, 13, 1, 1]
+    max_iou = tf.expand_dims(tf.reduce_max(iou, axis=-1), axis=-1)    # (batch, 13, 13, 1, 1)
 
     # if the label=0 && max_iou＜0.5, the bbox will be regarded as background (no object)
     respond_bgd = (1.0 - respond_bbox) * tf.cast(max_iou < IOU_LOSS_THRESH, tf.float32 )    # respond_bgd [batch, 13, 13, 3, 0/1]
