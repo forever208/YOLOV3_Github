@@ -62,7 +62,7 @@ def YOLOv3(input_layer):
 
 
 """decode 1 scale output of YOLOv3 [x,y,w,h,c], from offset into coordinates relating to 416*416"""
-def decode(conv_output, i=0):
+def decode(conv_output, i = 0):
     """
     :param conv_output: one scale output: [batch, grid, grid, 3*(5+c)], grid is 13/26/52
     :param i: i=0,1,2 correspond to 3 scales, i.e. (conv_sbbox, conv_mbbox, conv_lbbox)
